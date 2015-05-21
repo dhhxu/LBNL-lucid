@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 """
 This is the extractor and processor script to handle downloaded building
 energy data from Lucid's website (which should have been handled by the
@@ -36,7 +34,7 @@ def extract_all():
             extract(filepath)
             os.remove(filepath)
         else:
-            print("WARNING: %s not zip file" % filepath)
+            print("WARNING: %s not a zip file" % filepath)
     print("Ending zip file extraction.")
 
 def get_meter_ids(filepath):
@@ -77,6 +75,7 @@ def process(filepath):
         for i, name in enumerate(meters, 1):
             split_write(filepath, name, i)
         os.remove(filepath)
+        print("done")
     else:
         print("[%s] has 1 meter. Skipping." % (filepath))
 
@@ -85,6 +84,9 @@ def split_write(filepath, name, index):
     Called when the csv file at FILEPATH contains data for at least 2 meters.
     Writes a new csv file for meter NAME, whose data column is at column
     INDEX (zero-indexed). The new file name will be of form {FILEPATH}_{NAME}.
+
+    NOTE: A row of the file looks like:
+    timestamp | meter 1 | meter 2 | meter 3 | ...
     """
 
     new_filepath = os.path.splitext(filepath)[0] + "_" + name + ".csv"

@@ -12,16 +12,185 @@ data for the requested meters and prepares a URL link to download the data. It
 takes time for the link to appear. So requesting many meters at once can cause
 performance issues, as this script will not wait forever for the download to
 be ready.
-
-Dependencies: util.py
 """
 
+from datetime import datetime
 from pyvirtualdisplay import Display
 from selenium import webdriver
 from selenium.common.exceptions import NoSuchElementException
 from time import sleep
 
 import util
+
+def valid_date(date):
+    """
+    Checks if DATE is of form MM/DD/YYYY. Does not check if YYYY is correct.
+    Also, does not check for edge cases, i.e. Feb 30.
+    """
+    mdy = date.split("/")
+    if (len(mdy) == 3):
+        try:
+            m = int(mdy[0])
+            d = int(mdy[1])
+            y = int(mdy[2])
+            datetime(y, m, d)
+            return True
+        except TypeError, ValueError:
+            return False
+    return False
+
+def get_datetime(date):
+    """
+    Return the datetime object representing DATE. DATE must be valid.
+    """
+
+    mdy = date.split("/")
+    m = int(mdy[0])
+    d = int(mdy[1])
+    y = int(mdy[2])
+    return datetime(y, m, d)
+
+def convert_date(date):
+    """
+    Convert date of form MM/DD/YYYY into YYYY-MM-DD. Assumes date is correct
+    form.
+    """
+    
+    mdy = date.split("/")
+    m = mdy[0]
+    d = mdy[1]
+    y = mdy[2]
+    newDate = "%s-%s-%s" % (y, m, d)
+    return newDate
+
+def get_dates():
+    """
+    Prompt the user for a start and end date.
+    This function will keep prompting until valid dates are entered.
+    Returns a tuple of start date and end date strings.
+    """
+
+    hasValidStart = False
+    hasValidEnd = False
+    start = None
+    end = None
+    while True:
+        if not hasValidStart:
+            start = raw_input("Enter start date (MM/DD/YYYY): ") 
+            if not valid_date(start):
+                print("Invalid start date %s" % (start))
+                continue
+            else:
+                hasValidStart = True
+        if not hasValidEnd:
+            end = raw_input("Enter end date (MM/DD/YYYY): ")
+            if not valid_date(end):
+                print("Invalid end date %s" % (end))
+                continue
+            else:
+                hasValidEnd = True
+        if hasValidStart and hasValidEnd:
+            if get_datetime(start) < get_datetime(end):
+                decision = raw_input("Is date range %s - %s acceptable? (Y/N)")
+                if decision.lower() == "y":
+                    break
+                else:
+                    hasValidStart = False
+                    hasValidEnd = False
+            else:
+                print("End date comes before start. Please enter a valid date.")
+                hasValidEnd = False
+    return (start, end)
+
+def valid_index(index, left, right):
+    """
+    Checks if INDEX is a valid number and is within the index range. If valid,
+    returns TRUE. Otherwise, returns FALSE.
+    """
+
+    try:
+        num = int(index)
+        return (num >= left and num <= right)
+    except ValueError, TypeError:
+        return False
+
+def display_meters(all_meters):
+    """
+    Print meter names and their indices. Meters come from ALL_METERS list.
+    Note that indices begin at 1.
+    """
+
+    for index, meter in enumerate(all_meters, 1):
+        if index < 10:
+            print("  %d:  %s" % (index, meter))
+        else:
+            print("  %d: %s" % (index, meter))
+    print "\n"
+
+def get_meters(meters):
+    """
+    Prompt user to enter indicies of the meters desired. At least one index must
+    be entered. Returns the selected indices.
+    """
+
+    user_list = []
+    atLeastOneMeter = False
+    minIndex = 1
+    maxIndex = len(meters)
+    display_meters(meters)
+    print("Please select the indices of the meters desired. Enter 'all' if all"
+          "meters are desired (not recommended, as performance will decrease)."
+          " Enter 'done' to end selection.")
+    while True:
+        index = raw_input("Enter a meter index: ") 
+        if index == "all":
+            return meters
+        if not atLeastOneMeter:
+            if index == "done":
+                print("No meters selected. Please try again.")
+                continue
+            if not valid_index(index, minIndex, maxIndex):
+                print("Invalid meter index.")
+                continue
+            num = int(index)
+            if not num in user_list:
+                user_list.append(num)
+                atLeastOneMeter = True
+            else:
+                print("Meter already selected. Please pick a different one")
+        else:
+            if index == "done":
+                return user_list
+            if not valid_index(index, minIndex, maxIndex):
+                print("Invalid meter index.")
+                continue
+            num = int(index)
+            if not num in user_list:
+                user_list.append(num)
+            else:
+                print("Meter already selected. Please pick a different one")
+
+def clean_up_file_name(filename):
+    """
+    If FILENAME has spaces in it, replaces them with underscores. Otherwise,
+    this function returns the filename unchanged.
+    """
+
+    words = filename.split()
+    if len(words) > 1:
+        filename = "_".join(words)
+    return filename
+
+def err(msg, browser, display, code=1):
+    """
+    Print error message, closes the BROWSER and DISPLAY, and quits script
+    with exit code CODE.
+    """
+
+    print("ERROR: %s\n" % msg)
+    browser.quit()
+    display.stop()
+    exit(code)
 
 def setup():
     """
@@ -38,37 +207,37 @@ def setup():
     p.set_preference("browser.download.dir", util.DATA_PATH)
     p.set_preference("browser.helperApps.neverAsk.saveToDisk", "application/zip")
     browser = webdriver.Firefox(firefox_profile=p)
-    util.alert("done")
+    print("done")
     return (browser, display)
 
-def login(browser):
+def login(browser, display):
     """
     Logs into the Lucid website. On failure, exits the script.
     """
 
     print("Loading page... "),
     browser.get(util.URL)
-    util.alert("done")
+    print("done")
     username = browser.find_element_by_id("id_username")
     password = browser.find_element_by_id("id_password")
     username.send_keys(util.USER)
     password.send_keys(util.PASS)
     browser.find_element_by_name("submit").click()
     if not "home" in browser.title.lower():
-        util.err("log in failed.")
+        err("log in failed.", browser, display)
     else:
-        util.alert("Logged in as %s" % util.USER)
+        print("Logged in as %s" % util.USER)
 
-def get_data_page(browser):
+def get_data_page(browser, display):
     """
     Navigate to the data export page. If failure, exits the script.
     """
 
     browser.get("https://buildingos.com/exports/create")
     if not "export" in browser.title.lower():
-        util.err("export page not available")
+        err("Export page not available.", browser, display)
     else:
-        util.alert("export page found")
+        print("Export page found.")
 
 def interact(browser):
     """
@@ -83,32 +252,27 @@ def interact(browser):
     # Let page load.
     sleep(3)
     raw_meter_list = browser.find_elements_by_class_name("ms-elem-selectable")
-    all_meters = []
-    for meter in raw_meter_list:
-        name = meter.get_attribute("title")
-        all_meters.append(name)
+    all_meters = [ meter.get_attribute("title") for meter in raw_meter_list ]
 
-    meter_list = []
-    meter_indices = sorted(util.get_meters(all_meters))
-    for index in meter_indices:
-        meter_list.append(all_meters[index - 1])
+    meter_indices = sorted(get_meters(all_meters))
+    meter_list = [ all_meters[index - 1] for index in meter_indices ]
 
-    util.alert("Selecting meters...")
+    print("Selecting meters...")
     for meter in meter_list:
-        util.alert("Selecting meter: %s" % (meter))
+        print("Selecting meter: %s" % (meter))
         elem = browser.find_element_by_xpath("//*[@title=\"%s\"]/span" % (meter))
         elem.click()
-    util.alert("Selection done.")
+    print("Selection done.")
 
     add_button_xpath = "//*[@id=\"addPoints\"]/form/fieldset/div[3]/button"
     browser.find_element_by_xpath(add_button_xpath).click()
     count = browser.find_element_by_id("numPoints")
-    util.alert("number of points selected: %s" % (count.text))
+    print("Number of points selected: %s" % (count.text))
 
-    start_date, end_date = util.get_dates()
+    start_date, end_date = get_dates()
     filename = raw_input("Enter a base file name (spaces will be replaced with"
                          " an underscore): ")
-    filename = util.clean_up_file_name(filename)
+    filename = clean_up_file_name(filename)
 
     start = browser.find_element_by_id("id_start").clear()
     end = browser.find_element_by_id("id_end").clear()
@@ -117,8 +281,8 @@ def interact(browser):
     browser.execute_script(start_script)
     browser.execute_script(end_script)
 
-    export_string = "%s_%s_%s" % (filename, util.convert_date(start_date), \
-                                  util.convert_date(end_date))
+    export_string = "%s_%s_%s" % (filename, convert_date(start_date),
+                                  convert_date(end_date))
     export_name_box = browser.find_element_by_id("id_name")
     export_name_box.send_keys(export_string)
 
@@ -129,13 +293,13 @@ def interact(browser):
 
     return export_string
 
-def download(browser, export_string):
+def download(export_string, browser, display):
     """
     Downloads the data from the link whose name is EXPORT_STRING. On error,
-    exits.
+    quits the script.
     """
 
-    util.alert("Waiting for download to be ready.")
+    print("Waiting for download to be ready.")
     waitCount = 0
     link = None
     while waitCount < util.MAX_RETRIES:
@@ -144,7 +308,7 @@ def download(browser, export_string):
         waitCount += 1
         try:
             link = browser.find_element_by_link_text(export_string)
-            util.alert("Link found.")
+            print("Link found.")
             break
         except NoSuchElementException:
             continue
@@ -152,11 +316,11 @@ def download(browser, export_string):
         try:
             url = link.get_attribute("href")
             browser.get(url)
-            util.alert("Downloading file %s" % link.text)
+            print("Downloading file %s" % link.text)
         except NoSuchElementException:
-            util.err("Link not found")
+            err("Link not found", browser, display)
     else:
-        util.err("Link not found")
+        err("Link not found", browser, display)
 
 def main():
     """
@@ -164,12 +328,12 @@ def main():
     """
 
     browser, display = setup()
-    login(browser)
-    get_data_page(browser)
+    login(browser, display)
+    get_data_page(browser, display)
     export_string = interact(browser)
-    download(browser, export_string)
+    download(export_string, browser, display)
 
-    util.alert("Exiting...")
+    print("Exiting...")
     browser.quit()
     display.stop()
 

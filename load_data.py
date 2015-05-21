@@ -1,10 +1,8 @@
-#!/usr/bin/env python
-
 """
 This script loads already processed building energy data (processing done by
 by extract_data.py) into an sMAP server, with the help of smap-load-csv.
 
-Dependencies: util.py, sMAP library
+Dependencies: sMAP library (smap-load-csv)
 """
 
 import csv
@@ -14,20 +12,6 @@ import subprocess
 import uuid
 
 import util
-
-ARCHIVED = util.FINISHED + "archived/"
-INFO = os.getcwd() + "/info/"
-
-# The location of the map file. This file provides a 1 to 1 mapping of
-# internal source name to UUID.
-MAP = INFO + "map.csv"
-
-# smap-load-csv parameter values:
-LINE_SKIP = 4
-TIME_FORMAT = "%Y-%m-%d %H:%M"
-DEST_PREFIX = util.DEST_PREFIX 
-API = util.API
-REPORT_DEST = DEST_PREFIX + API
 
 def get_meter_id(filepath):
     """
@@ -49,7 +33,7 @@ def get_uuid(source_name):
     assumed to exist.
     """
 
-    with open(MAP, "rb") as mapfile:
+    with open(util.MAP, "rb") as mapfile:
         reader = csv.reader(mapfile)
         for row in reader:
             if source_name.lower() == row[0].lower():
@@ -63,22 +47,23 @@ def assign_uuid(source_name):
     """
 
     new_id = uuid.uuid4()
-    with open(MAP, 'a') as mapfile:
+    with open(util.MAP, 'a') as mapfile:
         writer = csv.writer(mapfile)
         writer.writerow([source_name, new_id])
         return new_id.hex
 
 def build_input_string(source_name, uid, filepath):
     """
-    Generates the command list to be passed to subprocess call.
+    Generates the command list to be passed to subprocess call. The data in
+    FILEPATH csv will be uploaded to the sMAP server.
     """
 
     base = ["smap-load-csv"]
     base.append("--uuid=" + uid)
     base.append("--source-name=" + source_name)
-    base.append("--skip-lines=" + str(LINE_SKIP))
-    base.append("--time-format=" + TIME_FORMAT)
-    base.append("--report-dest=" + REPORT_DEST)
+    base.append("--skip-lines=" + str(util.LINE_SKIP))
+    base.append("--time-format=" + util.TIME_FORMAT)
+    base.append("--report-dest=" + util.REPORT_DEST)
     base.append(filepath)
     return base
 
@@ -101,26 +86,6 @@ def cleanup(uid):
                 shutil.rmtree(path, ignore_errors = True)
     print("done")
 
-def load_all():
-    """
-    Loads all processed data files in the finished directory into the sMAP
-    server. Loaded files are then moved to the archived directory.
-    """
-
-    print("Begin loading ...\n")
-    for filename in os.listdir(util.FINISHED):
-        filepath = util.FINISHED + filename
-        if os.path.isfile(filepath):
-            ext = os.path.splitext(filename)[1]
-            if ext.lower() == ".csv":
-                status = load(filepath)
-                if not status:
-                    print("[FAIL]")
-                else:
-                    os.rename(filepath, ARCHIVED + filename)
-                    print("[OK]")
-    print("\nLoading done.")
-
 def load(filepath):
     """
     Loads the data file FILEPATH into the sMAP server. Assumes that FILEPATH
@@ -141,12 +106,32 @@ def load(filepath):
         print("[ERROR] code %d" % (e.returncode))
         print("[ERROR] %s" % (e.output))
         return False
-    # Server error -- command will have 0 exit code but not actually work.
+    # Server error -- command can have 0 exit code but not actually work.
     if "reply" in status.lower():
         return False
 
     cleanup(str(uid))
     return True
+
+def load_all():
+    """
+    Loads all processed data files in the finished directory into the sMAP
+    server. Loaded files are then moved to the archived directory.
+    """
+
+    print("Begin loading ...\n")
+    for filename in os.listdir(util.FINISHED):
+        filepath = util.FINISHED + filename
+        if os.path.isfile(filepath):
+            ext = os.path.splitext(filename)[1]
+            if ext.lower() == ".csv":
+                status = load(filepath)
+                if not status:
+                    print("[FAIL]")
+                else:
+                    os.rename(filepath, util.ARCHIVED + filename)
+                    print("[OK]")
+    print("\nLoading done.")
 
 def main():
     """
