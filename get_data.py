@@ -15,6 +15,7 @@ be ready.
 """
 
 from datetime import datetime
+from getpass import getpass
 from pyvirtualdisplay import Display
 from selenium import webdriver
 from selenium.common.exceptions import NoSuchElementException
@@ -35,7 +36,7 @@ def valid_date(date):
             y = int(mdy[2])
             datetime(y, m, d)
             return True
-        except TypeError, ValueError:
+        except (TypeError, ValueError):
             return False
     return False
 
@@ -111,7 +112,7 @@ def valid_index(index, left, right):
     try:
         num = int(index)
         return (num >= left and num <= right)
-    except ValueError, TypeError:
+    except (ValueError, TypeError):
         return False
 
 def display_meters(all_meters):
@@ -125,7 +126,7 @@ def display_meters(all_meters):
             print("  %d:  %s" % (index, meter))
         else:
             print("  %d: %s" % (index, meter))
-    print "\n"
+    print("\n")
 
 def get_meters(meters):
     """
@@ -192,6 +193,17 @@ def err(msg, browser, display, code=1):
     display.stop()
     exit(code)
 
+def get_user_login():
+    """
+    Prompt user for Lucid email (username) and password. The password will not
+    be visible to the user, but the username will be.
+    Returns (username, password) tuple.
+    """
+
+    user = raw_input("Email: ")
+    passwd = getpass("Password: ")
+    return (user, passwd)
+
 def setup():
     """
     Sets up the display and browser for running Selenium with headless
@@ -210,23 +222,53 @@ def setup():
     print("done")
     return (browser, display)
 
-def login(browser, display):
+def login(browser, display, user_mode):
     """
-    Logs into the Lucid website. On failure, exits the script.
+    Logs into the Lucid website. On failure, exits the script. Assumes
+    that the credentials supplied in the environment variables are
+    correct. If USER_MODE is TRUE, prompt user for username and password.
+    If incorrect username/password is supplied, keeps prompting the user.
     """
 
     print("Loading page... "),
     browser.get(util.URL)
     print("done")
-    username = browser.find_element_by_id("id_username")
-    password = browser.find_element_by_id("id_password")
-    username.send_keys(util.USER)
-    password.send_keys(util.PASS)
-    browser.find_element_by_name("submit").click()
-    if not "home" in browser.title.lower():
-        err("log in failed.", browser, display)
+
+
+    if user_mode:
+        login_prompt(browser, display)
     else:
-        print("Logged in as %s" % util.USER)
+        username_element = browser.find_element_by_id("id_username")
+        password_element = browser.find_element_by_id("id_password")
+        username_element.send_keys(util.USER)
+        password_element.send_keys(util.PASS)
+        browser.find_element_by_name("submit").click()
+
+        if not "home" in browser.title.lower():
+            err("log in failed.", browser, display)
+        else:
+            print("Logged in as %s" % util.USER)
+
+def login_prompt(browser, display):
+    """
+    Handle prompting user for username and password and logging in.
+    If login fails, keep prompting user.
+    """
+
+    while True:
+        user, passwd = get_user_login()
+        username_element = browser.find_element_by_id("id_username")
+        password_element = browser.find_element_by_id("id_password")
+        username_element.send_keys(util.USER)
+        password_element.send_keys(util.PASS)
+        browser.find_element_by_name("submit").click()
+
+        if not "home" in browser.title.lower():
+            print("Incorrect email/password. Please try again.")
+            continue
+        else:
+            print("Logged in as: %s" % user)
+            return
 
 def get_data_page(browser, display):
     """
@@ -322,13 +364,15 @@ def download(export_string, browser, display):
     else:
         err("Link not found", browser, display)
 
-def main():
+def main(user_mode=False):
     """
-    Main function.
+    Main function. If USER_MODE is set to TRUE, prompt the user for
+    Lucid login credentials. Otherwise, get login credentials from
+    environment variables.
     """
 
     browser, display = setup()
-    login(browser, display)
+    login(browser, display, user_mode)
     get_data_page(browser, display)
     export_string = interact(browser)
     download(export_string, browser, display)
