@@ -92,7 +92,8 @@ def get_dates():
                 hasValidEnd = True
         if hasValidStart and hasValidEnd:
             if get_datetime(start) < get_datetime(end):
-                decision = raw_input("Is date range %s - %s acceptable? (Y/N)")
+                accept_string = "Is range %s - %s acceptable? (Y/N) " % (start, end)
+                decision = raw_input(accept_string)
                 if decision.lower() == "y":
                     break
                 else:
@@ -234,12 +235,13 @@ def login(browser, display, user_mode):
     browser.get(util.URL)
     print("done")
 
-
     if user_mode:
         login_prompt(browser, display)
     else:
         username_element = browser.find_element_by_id("id_username")
         password_element = browser.find_element_by_id("id_password")
+        username_element.clear()
+        password_element.clear()
         username_element.send_keys(util.USER)
         password_element.send_keys(util.PASS)
         browser.find_element_by_name("submit").click()
@@ -259,8 +261,10 @@ def login_prompt(browser, display):
         user, passwd = get_user_login()
         username_element = browser.find_element_by_id("id_username")
         password_element = browser.find_element_by_id("id_password")
-        username_element.send_keys(util.USER)
-        password_element.send_keys(util.PASS)
+        username_element.clear()
+        password_element.clear()
+        username_element.send_keys(user)
+        password_element.send_keys(passwd)
         browser.find_element_by_name("submit").click()
 
         if not "home" in browser.title.lower():
@@ -316,8 +320,8 @@ def interact(browser):
                          " an underscore): ")
     filename = clean_up_file_name(filename)
 
-    start = browser.find_element_by_id("id_start").clear()
-    end = browser.find_element_by_id("id_end").clear()
+    browser.find_element_by_id("id_start").clear()
+    browser.find_element_by_id("id_end").clear()
     start_script = "document.getElementById('id_start').value = '%s';" % (start_date)
     end_script = "document.getElementById('id_end').value = '%s';" % (end_date)
     browser.execute_script(start_script)
@@ -358,7 +362,7 @@ def download(export_string, browser, display):
         try:
             url = link.get_attribute("href")
             browser.get(url)
-            print("Downloading file %s" % link.text)
+            print("Downloading file: %s" % link.text)
         except NoSuchElementException:
             err("Link not found", browser, display)
     else:
