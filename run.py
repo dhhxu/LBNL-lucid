@@ -20,8 +20,8 @@ def epilog():
 	Returns the text that is displayed after the argument help.
 	"""
 
-	string =  "Default behavior without arguments is to obtain login\n"
-	string += "credentials from environment variables."
+	string =  "Default behavior without arguments is to prompt for login\n"
+	string += "credentials."
 	return string
 
 def main():
@@ -31,14 +31,14 @@ def main():
     """
 
     parser = argparse.ArgumentParser(epilog=epilog())
-    parser.add_argument("-u", "--user", help="Prompt for username and password",
+    parser.add_argument("-a", "--auto", help="Use stored environment variables.",
     	action="store_true")
     args = parser.parse_args()
 
-    if args.user:
-    	get_data.main(True)
+    if args.auto:
+    	get_data.main(False)
     else:
-     	get_data.main(False)
+     	get_data.main(True)
     extract_data.main()
     load_data.main()
 
