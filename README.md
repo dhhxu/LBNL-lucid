@@ -34,7 +34,7 @@ Add the following lines to your `~/.bashrc` file:
 
 Clone the repository:
 
-      $ git clone git@github.com:dhhxu/LBNL-lucid.git
+      $ git clone https://github.com:dhhxu/LBNL-lucid.git
 
 Set up directories inside the repository:
 
@@ -47,9 +47,12 @@ Set up directories inside the repository:
 
 ###Usage
 
-      $ python run.py
+      $ python run.py [-a]
 
 Follow the instructions (carefully) when prompted.
+
+The `-a` option automatically logs in if the `LUCIDUSER` and `LUCIDPASS`
+environment variables are set correctly.
 
 ###Details
 
@@ -79,7 +82,7 @@ The `run.py` script calls three helper scripts:
    sMAP library). After loading, the data is moved to the `finished/archived`
    directory.
 
-   Note that this requires a `map.csv` file located in `info` directory, as
+   Note that this requires a `map.csv` file located in the `info` directory, as
    it stores the meter name - UUID mapping.
 
 ###Issues
@@ -92,11 +95,9 @@ The `run.py` script calls three helper scripts:
 * Map file
 
    The map file is essential for tracking the meter-UUID mapping so that
-   operations like updating streams can be supported. It currently is
-   not backed up, so any loss can lead to duplicated streams.
-   
-   One option is to have git track the file. This may not be suitable
-   as the number of unique meters grows. Regardless of the option
-   chosen, this file should have a backup.
+   operations like updating streams can be supported.
 
-**Last updated:** 2015-05-05
+   It currently is tracked by git, which works in the short run. In the
+   long run, this file would ideally be replaced by a database.
+
+**Last updated:** 2015-05-27
