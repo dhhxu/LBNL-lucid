@@ -121,13 +121,13 @@ def display_meters(all_meters):
     Print meter names and their indices. Meters come from ALL_METERS list.
     Note that indices begin at 1.
     """
-
+    
+    print("\n")
     for index, meter in enumerate(all_meters, 1):
         if index < 10:
             print("  %d:  %s" % (index, meter))
         else:
             print("  %d: %s" % (index, meter))
-    print("\n")
 
 def get_meters(meters):
     """
