@@ -38,10 +38,9 @@ def main():
     if args.user:
     	get_data.main(True)
     else:
-    	get_data.main(False)
-    
-	extract_data.main()
-	load_data.main()
+     	get_data.main(False)
+    extract_data.main()
+    load_data.main()
 
 if __name__ == "__main__":
     main()
