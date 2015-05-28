@@ -330,6 +330,7 @@ def interact(browser):
     export_string = "%s_%s_%s" % (filename, convert_date(start_date),
                                   convert_date(end_date))
     export_name_box = browser.find_element_by_id("id_name")
+    export_name_box.clear()
     export_name_box.send_keys(export_string)
 
     browser.find_element_by_xpath("//select[@id='id_resolution']/option[@value='1']").click()
@@ -368,7 +369,7 @@ def download(export_string, browser, display):
     else:
         err("Link not found", browser, display)
 
-def main(user_mode=False):
+def main(user_mode=True):
     """
     Main function. If USER_MODE is set to TRUE, prompt the user for
     Lucid login credentials. Otherwise, get login credentials from
