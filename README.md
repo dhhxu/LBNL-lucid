@@ -25,8 +25,8 @@ Make sure to have these satisfied before proceeding further.
 
 Add the following lines to your `~/.bashrc` file:
 
-      $ export LUCIDUSER='Your Lucid username'
-      $ export LUCIDPASS='Your Lucid password'
+      $ export LUCIDUSER='Your Lucid username'    # optional
+      $ export LUCIDPASS='Your Lucid password'    # optional
       $ export SMAPPREFIX='sMAP URL prefix to upload data to'
       $ export SMAPAPI='Your sMAP API key'
 
@@ -51,8 +51,9 @@ Set up directories inside the repository:
 
 Follow the instructions (carefully) when prompted.
 
-The `-a` option automatically logs in if the `LUCIDUSER` and `LUCIDPASS`
-environment variables are set correctly.
+The optional `-a` option automatically logs in if the `LUCIDUSER` and `LUCIDPASS`
+environment variables are set correctly. Note that these environment variables
+are not required for this script to work.
 
 ###Details
 
@@ -100,4 +101,4 @@ The `run.py` script calls three helper scripts:
    It currently is tracked by git, which works in the short run. In the
    long run, this file would ideally be replaced by a database.
 
-**Last updated:** 2015-05-27
+**Last updated:** 2015-05-28
