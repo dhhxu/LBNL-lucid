@@ -122,12 +122,12 @@ def display_meters(all_meters):
     Note that indices begin at 1.
     """
     
-    print("\n")
     for index, meter in enumerate(all_meters, 1):
         if index < 10:
             print("  %d:  %s" % (index, meter))
         else:
             print("  %d: %s" % (index, meter))
+    print("\n")
 
 def get_meters(meters):
     """
@@ -189,7 +189,7 @@ def err(msg, browser, display, code=1):
     with exit code CODE.
     """
 
-    print("ERROR: %s\n" % msg)
+    print("[ERROR] %s" % msg)
     browser.quit()
     display.stop()
     exit(code)

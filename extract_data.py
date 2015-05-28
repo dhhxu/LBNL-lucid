@@ -29,7 +29,7 @@ def extract_all():
 
     print("Beginning zip file extraction.")
     for filename in os.listdir(util.DATA_PATH):
-        filepath = util.DATA_PATH + filename
+	filepath = os.path.join(util.DATA_PATH, filename)
         if zipfile.is_zipfile(filepath):
             extract(filepath)
             os.remove(filepath)
@@ -109,7 +109,7 @@ def process_all():
     for filename in os.listdir(util.FINISHED):
         ext = os.path.splitext(filename)[1]
         if ext.lower() == ".csv":
-            filepath = util.FINISHED + filename
+	    filepath = os.path.join(util.FINISHED, filename)
             process(filepath)
     print("\nProcessing done.")
 

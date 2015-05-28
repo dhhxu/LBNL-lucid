@@ -79,12 +79,11 @@ def cleanup(uid):
     print("Cleaning up ..."),
     for filename in os.listdir(cwd):
         if uid in filename:
-            path = cwd + "/" + filename
+	    path = os.path.join(cwd, filename)
             if os.path.isfile(path):
                 os.remove(path)
             else:
                 shutil.rmtree(path, ignore_errors = True)
-	else:
     print("done")
 
 def load(filepath):
@@ -122,7 +121,7 @@ def load_all():
 
     print("Begin loading ...\n")
     for filename in os.listdir(util.FINISHED):
-        filepath = util.FINISHED + filename
+	filepath = os.path.join(util.FINISHED, filename)
         if os.path.isfile(filepath):
             ext = os.path.splitext(filename)[1]
             if ext.lower() == ".csv":
@@ -130,7 +129,7 @@ def load_all():
                 if not status:
                     print("[FAIL]")
                 else:
-                    os.rename(filepath, util.ARCHIVED + filename)
+		    os.rename(filepath, os.path.join(util.ARCHIVED, filename))
                     print("[OK]")
     print("\nLoading done.")
 

@@ -9,10 +9,11 @@ Utility functions for the following scripts:
 import os
 
 # Directories
-DATA_PATH = os.getcwd() + "/data/"
-FINISHED = os.getcwd() + "/finished/"
-ARCHIVED = FINISHED + "archived/"
-INFO = os.getcwd() + "/info/"
+cwd = os.getcwd()
+DATA_PATH = os.path.join(cwd, "data")
+FINISHED = os.path.join(cwd, "finished")
+ARCHIVED = os.path.join(FINISHED, "archived")
+INFO = os.path.join(cwd, "info")
 
 # For get_data.py
 
@@ -38,5 +39,5 @@ TIME_FORMAT = "%Y-%m-%d %H:%M"
 
 # The location of the map file. This file provides a 1 to 1 mapping of
 # internal source name to UUID.
-MAP = INFO + "map.csv"
+MAP = os.path.join(INFO, "map.csv")
 
