@@ -14,6 +14,7 @@ import argparse
 import get_data
 import extract_data
 import load_data
+import util
 
 def epilog():
 	"""
@@ -36,7 +37,11 @@ def main():
     args = parser.parse_args()
 
     if args.auto:
-    	get_data.main(False)
+        if (util.USER and util.PASS):
+            get_data.main(False)
+        else:
+            print("[ERROR] Environment variables for Lucid login incorrect.")
+            exit(1)
     else:
      	get_data.main(True)
     extract_data.main()
