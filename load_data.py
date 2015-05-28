@@ -50,7 +50,7 @@ def assign_uuid(source_name):
     with open(util.MAP, 'a') as mapfile:
         writer = csv.writer(mapfile)
         writer.writerow([source_name, new_id])
-        return new_id.hex
+        return str(new_id)
 
 def build_input_string(source_name, uid, filepath):
     """
@@ -74,16 +74,23 @@ def cleanup(uid):
     If the load is successful, we no longer need those files. The created
     files are prefixed with UID.
     """
+    print("[DEBUG] uuid: %s" % uid)
 
     cwd = os.getcwd()
+    print("[DEBUG] cwd: %s" % cwd)
     print("Cleaning up ..."),
     for filename in os.listdir(cwd):
+	print("[DEBUG] filepath: %s" % filename)
         if uid in filename:
+	    print("[DEBUG] %s in %s" %(uid, filename))
             path = cwd + "/" + filename
+	    print("[DEBUG] abs path is: %s" % path)
             if os.path.isfile(path):
                 os.remove(path)
             else:
                 shutil.rmtree(path, ignore_errors = True)
+	else:
+	    print("[DEBUG] %s not in %s" % (uid, filename))
     print("done")
 
 def load(filepath):
@@ -99,6 +106,7 @@ def load(filepath):
     if not uid:
         uid = assign_uuid(source_name)
     status = ""
+    print("[DEBUG] <load> uuid: %s" % uid)
     try:
         cmd = build_input_string(source_name, uid, filepath)
         status = subprocess.check_output(cmd)
@@ -110,7 +118,7 @@ def load(filepath):
     if "reply" in status.lower():
         return False
 
-    cleanup(str(uid))
+    cleanup(uid)
     return True
 
 def load_all():
